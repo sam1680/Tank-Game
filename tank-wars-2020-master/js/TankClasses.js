@@ -13,7 +13,6 @@ class BaseTank {
     this.shadow = scene.physics.add.sprite(x, y, texture, 'shadow');
     this.shadow.setDepth(1);
     this.hull = scene.physics.add.sprite(x, y, texture, frame);
-    //  TODO check body size
     this.hull.body.setSize(this.hull.width - 8, this.hull.height - 8);
     this.hull.body.collideWorldBounds = true;
     this.hull.body.bounce.setTo(1, 1);
@@ -62,7 +61,7 @@ class BaseTank {
 class EnemyTank extends BaseTank {
   player;
   nextShot;
-  shotInterval = 2000;
+  shotInterval = 500;
   constructor(scene, x, y, texture, frame, player) {
     super(scene, x, y, texture, frame);
     this.player = player;
@@ -71,7 +70,7 @@ class EnemyTank extends BaseTank {
     // initialise next shot time
     this.nextShot = 0;
   }
-  initNvt() {
+  initMvt(){
     this.scene.physics.velocityFromRotation(this.hull.rotation, this.maxSpeed, this.hull.body.velocity);
   }
   update(time, delta) {
@@ -84,12 +83,12 @@ class EnemyTank extends BaseTank {
     if (this.damageCount <= this.damageMax - 2 &&
       Phaser.Math.Distance.Between(this.hull.x, this.hull.y, this.player.hull.x, this.player.hull.y) < 300
     ) {
-      if(this.nextShot > time){
+      if (this.nextShot > time) {
         return
       }
       this.nextShot = time + this.shotInterval;
       let bullet = this.bullets.get(this.turret.x, this.turret.y);
-      if(bullet){
+      if (bullet) {
         this.scene.fireBullet(bullet, this.turret.rotation, this.player);
       }
     }
@@ -103,7 +102,7 @@ class EnemyTank extends BaseTank {
     if (this.isDestroyed()) {
       this.turret.destroy();
       this.hull.destroy();
-    } else if (this.damageCount == this.damageMax - 1){ 
+    } else if (this.damageCount == this.damageMax - 1) {
       this.burn();
     }
     // destroy turret and hull
@@ -111,14 +110,16 @@ class EnemyTank extends BaseTank {
   }
 }
 class BossTank extends EnemyTank {
-  shotInterval = 500;
-  maxSpeed = 80;
+  shotInterval = 200;
+  maxSpeed = 50;
   damageMax = 5;
   constructor(scene, x, y, texture, frame, player) {
     super(scene, x, y, texture, frame, player);
   }
 }
 class FastTank extends EnemyTank {
+  stotInterval = 800;
+  maxSpeed = 150;
   constructor(scene, x, y, texture, frame, player) {
     super(scene, x, y, texture, frame, player);
   }

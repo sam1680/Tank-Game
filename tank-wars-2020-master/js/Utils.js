@@ -1,5 +1,5 @@
-class Utils {
-    static RetrieveCustomProperties(object) {
+class Utils{
+    static  RetrieveCustomProperties(object) {
         if(object.properties) { //Check if the object has custom properties
             if(Array.isArray(object.properties)) { //Check if from Tiled v1.3 and above
                 object.properties.forEach(function(element){ //Loop through each property
@@ -15,5 +15,5 @@ class Utils {
         }
 
         return object; //Return the new object w/ custom properties
-    }
+    } 
 }

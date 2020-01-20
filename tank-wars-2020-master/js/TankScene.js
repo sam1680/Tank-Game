@@ -17,8 +17,8 @@ class TankScene extends Phaser.Scene {
         // load explosion spritesheet
         this.load.spritesheet('kaboom', 'assets/tanks/explosion.png', {
             frameWidth: 64,
-            frameHeight: 64,
-        });
+            frameHeight: 64
+        })
         // load tileset
         this.load.image('tileset', 'assets/tanks/landscape-tileset.png');
         this.load.image('tileset2', 'assets/tanks/landscape-tileset2.png');
@@ -49,18 +49,18 @@ class TankScene extends Phaser.Scene {
         this.enemyBullets = this.physics.add.group({
             defaultKey: 'bullet',
             maxSize: 5
-        });
+        })
         // create player bullets physics group
         this.bullets = this.physics.add.group({
             defaultKey: 'bullet',
             maxSize: 5
-        });
+        })
         // get reference to object layer in tilemap data
         let objectLayer = this.map.getObjectLayer("objects");
         let enemyObjects = [];
         // create temporary array for enemy spawn points
         // retrieve custom properties for objects
-        objectLayer.objects.forEach(function(object){
+        objectLayer.objects.forEach(function (object) {
             object = Utils.RetrieveCustomProperties(object);
             // test for object types
             if (object.type === "playerSpawn") {
@@ -71,31 +71,26 @@ class TankScene extends Phaser.Scene {
                 enemyObjects.push(object);
             } else if (object.type === "fastSpawn") {
                 enemyObjects.push(object);
-            };
-        }, this);
-        for (let i = 0; i <enemyObjects.length; i++) {
+            }
+        }, this)
+        for (let i = 0; i < enemyObjects.length; i++) {
             this.createEnemy(enemyObjects[i]);
         }
-        // spawn enemies after player
-        this.createEnemy({
-            x: 200,
-            y: 200
-        });
         // create explosion animation
         this.anims.create({
             key: 'explode',
             frames: this.anims.generateFrameNumbers('kaboom', {
                 start: 0,
                 end: 23,
-                first: 23,
+                first: 23
             }),
-            frameRate: 24,
-        });
+            frameRate: 24
+        })
         // create explosions physics group
         this.explosions = this.physics.add.group({
             defaultKey: 'kaboom',
-            maxSize: this.enemyTanks.length + 1,
-        });
+            maxSize: this.enemyTanks.length + 1
+        })
         // listen to pointer down to trigger player shoot
         this.input.on('pointerdown', this.tryShoot, this);
         // camera follow player
@@ -128,7 +123,7 @@ class TankScene extends Phaser.Scene {
         } else if (object.type == "fastSpawn") {
             enemyTank = new FastTank(this, object.x, object.y, 'fast', 'tank1', this.player);
         }
-        enemyTank.initNvt();
+        enemyTank.initMvt();
         // create temp ref for enemy tank
         // create enemy tank 
         // enable enemy collision with destructable layer
@@ -176,7 +171,7 @@ class TankScene extends Phaser.Scene {
         } else {
             // else check for overlap with all enemy tanks
             for (let i = 0; i < this.enemyTanks.length; i++) {
-                this.physics.add.overlap(this.enemyTanks[i].hull, bullet, this.bulletHitEnemy, null, this)
+                this.physics.add.overlap(this.enemyTanks[i].hull, bullet, this.bulletHitEnemy, null, this);
             }
         }
 
@@ -191,7 +186,7 @@ class TankScene extends Phaser.Scene {
             this.input.enabled = false;
             this.enemyTanks = [];
             this.physics.pause();
-            let explosion = this.explosions.get(hull. x, hull.y);
+            let explosion = this.explosions.get(hull.x, hull.y);
             if (explosion) {
                 this.activateExplosion(explosion);
                 explosion.play('explode');
@@ -212,13 +207,14 @@ class TankScene extends Phaser.Scene {
             if (enemy.hull === hull) {
                 index = i;
                 break;
-            };
-        };
+            }
+        }
         // damage enemy
         enemy.damage();
         if (enemy.isDestroyed()) {
+            // if enemy is destroyed, remove from enemy tanks array
             this.enemyTanks.splice(index, 1);
-        };
+        }
         // place explosion
         let explosion = this.explosions.get(hull.x, hull.y);
         // call activateExplosion
@@ -227,10 +223,10 @@ class TankScene extends Phaser.Scene {
             this.activateExplosion(explosion);
             explosion.on('animationcomplete', this.animComplete, this);
             explosion.play('explode');
-        };
+        }
         // listen for animation complete, call animComplete
 
-        // if enemy is destroyed, remove from enemy tanks array
+
     }
     damageWall(bullet, tile) {
         // call disposeOfBullet
