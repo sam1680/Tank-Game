@@ -23,6 +23,8 @@ class BaseTank {
     // set damageCount and damageMax
     this.damageCount = 0;
     this.damageMax = 2;
+    this.healthBar = {};
+    this.createHealthBar();
   }
   update() {
     // make shadow and turret position match hull position
@@ -30,6 +32,7 @@ class BaseTank {
     this.shadow.y = this.turret.y = this.hull.y;
     // make shadow rotation match hull rotation
     this.shadow.rotation = this.hull.rotation;
+    this.moveUIChilden();
   }
   damage() {
     // overridden in child 
@@ -56,6 +59,20 @@ class BaseTank {
   enableCollision(destructLayer) {
     // set collision with destructable layer
     this.scene.physics.add.collider(this.hull, destructLayer);
+  }
+  createHealthBar() {
+    this.healthBar = {};
+    this.healthBar.outline = this.scene.add.sprite(this.hull.x, this.hull.y + this.hull.height, 'outline-small');
+    this.healthBar.bar = this.scene.add.sprite(this.hull.x, this.hull.y + this.hull.height, 'bar-small');
+    this.healthBar.healthMask = this.scene.add.sprite(this.hull.x, this.hull.y + this.hull.height, 'bar-small');
+    this.healthBar.healthMask.visible = false;
+    this.healthBar.healthMask.offset = 0;
+    this.healthBar.bar.mask = new Phaser.Display.Masks.BitmapMask(this.scene, this.healthBar.healthMask);
+  }
+  moveUIChilden() {
+    this.healthBar.outline.setPosition(this.hull.x, this.hull.y + this.hull.height);
+    this.healthBar.bar.setPosition(this.hull.x, this.hull.y + this.hull.height);
+    this.healthBar.healthMask.setPosition(this.hull.x - this.healthBar.healthMask.offset, this.hull.y + this.hull.height);
   }
 }
 class EnemyTank extends BaseTank {
@@ -98,8 +115,12 @@ class EnemyTank extends BaseTank {
   damage() {
     // increment damageCount
     this.damageCount++;
+    this.healthBar.healthMask.offset = this.healthBar.bar.width - (this.healthBar.bar.width * (1 - this.damageCount / this.damageMax));
     // if count greater than max
     if (this.isDestroyed()) {
+      this.healthBar.outline.destroy();
+      this.healthBar.bar.destroy();
+      this.healthBar.healthMask.destroy();
       this.turret.destroy();
       this.hull.destroy();
     } else if (this.damageCount == this.damageMax - 1) {
@@ -181,8 +202,12 @@ class PlayerTank extends BaseTank {
     this.scene.cameras.main.shake(200, 0.005);
     // increment damage count
     this.damageCount++;
+    this.healthBar.healthMask.offset = this.healthBar.bar.width - (this.healthBar.bar.width * (1 - this.damageCount / this.damageMax));
     // if damage count equal or greater to max, burn
     if (this.isDestroyed()) {
+      this.healthBar.outline.destroy();
+      this.healthBar.bar.destroy();
+      this.healthBar.healthMask.destroy();
       this.burn();
     }
   }

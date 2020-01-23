@@ -24,8 +24,14 @@ class TankScene extends Phaser.Scene {
         this.load.image('tileset2', 'assets/tanks/landscape-tileset2.png');
         // load tilemap data
         this.load.tilemapTiledJSON('tilemap', 'assets/tanks/level1.json');
+        // load health bar image
+        this.load.image('outline-big', 'assets/ui/hp-bar-big.png');
+        this.load.image('bar-big', 'assets/ui/hp-bar2-big.png');
+        this.load.image('outline-small', 'assets/ui/hp-bar-small.png');
+        this.load.image('bar-small', 'assets/ui/hp-bar2-small.png');
     }
     create() {
+        this.score = 0;
         // load in the tilemap
         this.map = this.make.tilemap({
             key: 'tilemap'
@@ -99,6 +105,10 @@ class TankScene extends Phaser.Scene {
         this.physics.world.on('worldbounds', function (body) {
             this.disposeOfBullet(body.gameObject)
         }, this);
+
+        this.uiScene = this.scene.get('UIScene');
+        this.scene.launch(this.uiScene);
+        this.uiScene.createUIScene();
     }
     update(time, delta) {
         // update player
@@ -181,6 +191,7 @@ class TankScene extends Phaser.Scene {
         this.disposeOfBullet(bullet);
         // damage player
         this.player.damage();
+        this.uiScene.updateHealthBar(this.player);
         // if player destroyed, end game, play explosion animation
         if (this.player.isDestroyed()) {
             this.input.enabled = false;
@@ -198,6 +209,8 @@ class TankScene extends Phaser.Scene {
         bullet.disableBody(true, true);
     }
     bulletHitEnemy(hull, bullet) {
+        this.score++;
+        this.uiScene.updateScoreText(this.score);
         // call disposeOfBullet
         this.disposeOfBullet(bullet);
         // loop though enemy tanks array and find enemy tank that has been hit
@@ -255,5 +268,32 @@ class TankScene extends Phaser.Scene {
         // activate explosion
         explosion.setActive(true);
         explosion.setVisible(true);
+    }
+}
+
+class UIScene extends Phaser.Scene {
+    constructor() {
+        super('UIScene')
+    }
+    createUIScene() {
+        console.log("Hello");
+        this.scoreText = this.add.text(10, 10, "Score: 0", {
+            font: '40px Arial',
+            fill: '#000000'
+        });
+        this.healthBar = {};
+        this.healthBar.outline = this.add.sprite(config.width / 2, config.height - 50, 'outline-big');
+        this.healthBar.bar = this.add.sprite(config.width / 2, config.height - 50, 'bar-big');
+        this.healthBar.healthMask = this.add.sprite(config.width / 2, config.height - 50, 'bar-big');
+        this.healthBar.healthMask.visible = false;
+        this.healthBar.healthMask.ofset = 0;
+        this.healthBar.bar.mask = new Phaser.Display.Masks.BitmapMask(this, this.healthBar.healthMask);
+    }
+    updateHealthBar(player) {
+        this.healthBar.healthMask.offset = this.healthBar.bar.width - (this.healthBar.bar.width * (1 - player.damageCount / player.damageMax));
+        this.healthBar.healthMask.x = this.healthBar.bar.x - this.healthBar.healthMask.offset;
+    }
+    updateScoreText(score) {
+        this.scoreText.setText("Score: " + score);
     }
 }
