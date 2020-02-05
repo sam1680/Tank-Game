@@ -1,11 +1,23 @@
 class TankScene extends Phaser.Scene {
     map;
     destructLayer;
+    destructLayerStrong
     player;
     enemyTanks = [];
     bullets;
     enemyBullets;
     explosions;
+    constructor() {
+        super('GameScene')
+    }
+    init(data) {
+        this.music = new AudioManager(this);
+        if(data.music) {
+            this.music.volume = data.music.volume;
+            this.music.muted = data.music.muted;
+        }
+        this.sfx = new AudioManager(this);
+    }
     preload() {
         // load tank atlas 
         this.load.atlas('tank', 'assets/tanks/tanks.png', 'assets/tanks/tanks.json');
@@ -29,6 +41,9 @@ class TankScene extends Phaser.Scene {
         this.load.image('bar-big', 'assets/ui/hp-bar2-big.png');
         this.load.image('outline-small', 'assets/ui/hp-bar-small.png');
         this.load.image('bar-small', 'assets/ui/hp-bar2-small.png');
+        this.load.audio('game-music', 'assets/audio/evolution.mp3');
+        this.load.audio('shoot', 'assets/audio/shoot.wav');
+        this.load.audio('explosion', 'assets/audio/explosion.wav');
     }
     create() {
         this.score = 0;
@@ -40,7 +55,7 @@ class TankScene extends Phaser.Scene {
         let landscape = this.map.addTilesetImage('landscape-tileset', 'tileset');
         let landscape2 = this.map.addTilesetImage('landscape-tileset2', 'tileset2');
         // create static ground layer 
-        this.map.createStaticLayer('ground', landscape);
+        this.map.createStaticLayer('ground', [landscape, landscape2]);
         // create dynamic destructable layer
         this.destructLayer = this.map.createDynamicLayer('destructable', [landscape, landscape2], 0, 0);
         // set collision by property for destructable layer
@@ -108,7 +123,11 @@ class TankScene extends Phaser.Scene {
 
         this.uiScene = this.scene.get('UIScene');
         this.scene.launch(this.uiScene);
-        this.uiScene.createUIScene();
+        this.uiScene.createUIScene(this);
+        this.music.addAudio('game-music', {loop: true});
+        this.music.play('game-music');
+        this.sfx.addAudio('shoot');
+        this.sfx.addAudio('explosion');
     }
     update(time, delta) {
         // update player
@@ -160,6 +179,7 @@ class TankScene extends Phaser.Scene {
         }
     }
     fireBullet(bullet, rotation, target) {
+        
         // fyi bullet is a Sprite
         // set z index of bullet to appear above tank hull but below turret
         bullet.setDepth(3);
@@ -184,7 +204,8 @@ class TankScene extends Phaser.Scene {
                 this.physics.add.overlap(this.enemyTanks[i].hull, bullet, this.bulletHitEnemy, null, this);
             }
         }
-
+        this.sfx.play('shoot');
+        
     }
     bulletHitPlayer(hull, bullet) {
         // call disposeOfBullet
@@ -201,6 +222,7 @@ class TankScene extends Phaser.Scene {
             if (explosion) {
                 this.activateExplosion(explosion);
                 explosion.play('explode');
+                this.sfx.play('explosion');
             }
         }
     }
@@ -209,7 +231,7 @@ class TankScene extends Phaser.Scene {
         bullet.disableBody(true, true);
     }
     bulletHitEnemy(hull, bullet) {
-        this.score++;
+        this.score++
         this.uiScene.updateScoreText(this.score);
         // call disposeOfBullet
         this.disposeOfBullet(bullet);
@@ -236,6 +258,7 @@ class TankScene extends Phaser.Scene {
             this.activateExplosion(explosion);
             explosion.on('animationcomplete', this.animComplete, this);
             explosion.play('explode');
+            this.sfx.play('explosion');
         }
         // listen for animation complete, call animComplete
 
@@ -258,6 +281,7 @@ class TankScene extends Phaser.Scene {
             }
         }
     }
+    
     animComplete(animation, frame, gameObject) {
         // disable and return the explosion sprite to the explosions pool
         gameObject.disableBody(true, true);
@@ -275,8 +299,8 @@ class UIScene extends Phaser.Scene {
     constructor() {
         super('UIScene')
     }
-    createUIScene() {
-        console.log("Hello");
+    createUIScene(gameScene) {
+        this.gameScene = gameScene;
         this.scoreText = this.add.text(10, 10, "Score: 0", {
             font: '40px Arial',
             fill: '#000000'
@@ -288,6 +312,25 @@ class UIScene extends Phaser.Scene {
         this.healthBar.healthMask.visible = false;
         this.healthBar.healthMask.ofset = 0;
         this.healthBar.bar.mask = new Phaser.Display.Masks.BitmapMask(this, this.healthBar.healthMask);
+        let pause = new Button(this, 400, 30, "pause-button", function() {
+            this.scene.gameScene.scene.pause();
+            this.scene.pauseMenu.setVisible(true);
+        });
+        this.add.existing(pause);
+        this.createPauseMenu();
+        this.input.on("pointerup", function(pointer) {
+            pointer.lastBtn.clearTint();
+        });
+    }
+    createPauseMenu() {
+        this.pauseMenu = new Menu(this, 200, 100, 300, 300, "menu-texture", [
+            new Button(this, 20, 20, "play-button", function() {
+                this.scene.gameScene.scene.resume();
+                this.scene.pauseMenu.setVisible(false);
+            }),
+        ]);
+        this.add.existing(this.pauseMenu);
+        this.pauseMenu.setVisible(false);
     }
     updateHealthBar(player) {
         this.healthBar.healthMask.offset = this.healthBar.bar.width - (this.healthBar.bar.width * (1 - player.damageCount / player.damageMax));
@@ -295,5 +338,42 @@ class UIScene extends Phaser.Scene {
     }
     updateScoreText(score) {
         this.scoreText.setText("Score: " + score);
+    }
+}
+
+class MenuScene extends Phaser.Scene{
+    constructor() {
+        super('menuScene');
+    }
+    preload() {
+        this.load.image("pause-button", "assets/ui/pause.png");
+        this.load.image("menu-texture", "assets/ui/menuBox.png");
+        this.load.image("play-button", "assets/ui/play.png");
+        this.load.image("home-button", "assets/ui/home.png");
+        this.load.image("settings-button", "assets/ui/settings.png");
+        this.load.image("slider-bar", "assets/ui/slider-bar.png");
+        this.load.image("slider-outline", "assets/ui/slider-outline.png");
+        this.load.image("slider-dial", "assets/ui/slider-dial.png");
+        this.load.audio("menu-music", "assets/audio/epic.mp3")
+    }
+    create() {
+        this.mainMenu = new Menu(this, 200, 100, 400, 300, "menu-texture", [
+            new Button(this, 20, 20, "play-button", function() {
+                this.scene.scene.start('GameScene', {
+                    music: this.scene.music
+                });
+                this.scene.scene.stop()
+            }),
+            new Slider(this, 20, 200, 250, 60, "slider-outline", "slider-dial", function() {
+                this.scene.music.setVolume(this.percent/100);
+            })
+        ]);
+        this.add.existing(this.mainMenu);
+        this.input.on("pointerup", function(pointer) {
+            // pointer.lastBtn.clearTint();
+        });
+        this.music = new AudioManager(this);
+        this.music.addAudio('menu-music', {loop: true});
+        this.music.play('menu-music');
     }
 }

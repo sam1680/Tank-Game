@@ -131,7 +131,7 @@ class EnemyTank extends BaseTank {
   }
 }
 class BossTank extends EnemyTank {
-  shotInterval = 200;
+  shotInterval = 350;
   maxSpeed = 50;
   damageMax = 5;
   constructor(scene, x, y, texture, frame, player) {
@@ -139,7 +139,7 @@ class BossTank extends EnemyTank {
   }
 }
 class FastTank extends EnemyTank {
-  stotInterval = 800;
+  shotInterval = 650;
   maxSpeed = 150;
   constructor(scene, x, y, texture, frame, player) {
     super(scene, x, y, texture, frame, player);
