@@ -1,7 +1,6 @@
 class TankScene extends Phaser.Scene {
     map;
     destructLayer;
-    destructLayerStrong
     player;
     enemyTanks = [];
     bullets;
